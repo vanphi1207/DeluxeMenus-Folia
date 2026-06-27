@@ -244,18 +244,18 @@ public class DeluxeMenus extends JavaPlugin {
     }
 
     private void hookIntoVault() {
-        if (!Bukkit.getPluginManager().isPluginEnabled("Vault")) {
+        if (!Bukkit.getPluginManager().isPluginEnabled("Vault") && !Bukkit.getPluginManager().isPluginEnabled("VaultUnlocked")) {
             return;
         }
+
         this.vaultHook = new VaultHook();
 
         if (this.vaultHook.hooked()) {
-            this.debug(DebugLevel.HIGHEST, Level.INFO, "Successfully hooked into Vault!");
+            this.debug(DebugLevel.HIGHEST, Level.INFO, "Successfully hooked into Vault or VaultUnlocked!");
             return;
         }
 
-        this.debug(DebugLevel.HIGHEST, Level.WARNING, "Could not hook into Vault!",
-                "DeluxeMenus will continue to work but some features (such as the 'has money' requirement) may not be available.");
+        this.vaultHook = null;
     }
 
     @SuppressWarnings("deprecation")

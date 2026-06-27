@@ -304,8 +304,8 @@ public class ClickActionTask extends UniversalRunnable {
                 break;
 
             case TAKE_MONEY:
-                if (plugin.getVault() == null || !plugin.getVault().hooked()) {
-                    plugin.debug(DebugLevel.HIGHEST, Level.WARNING, "Vault not hooked! Cannot take money!");
+                if (plugin.getVault() == null || !plugin.getVault().hasEconomy()) {
+                    plugin.debug(DebugLevel.HIGHEST, Level.WARNING, "Vault or VaultUnlocked economy not hooked! Cannot take money!");
                     break;
                 }
 
@@ -321,8 +321,8 @@ public class ClickActionTask extends UniversalRunnable {
                 break;
 
             case GIVE_MONEY:
-                if (plugin.getVault() == null || !plugin.getVault().hooked()) {
-                    plugin.debug(DebugLevel.HIGHEST, Level.WARNING, "Vault not hooked! Cannot give money!");
+                if (plugin.getVault() == null || !plugin.getVault().hasEconomy()) {
+                    plugin.debug(DebugLevel.HIGHEST, Level.WARNING, "Vault or VaultUnlocked economy not hooked! Cannot give money!");
                     break;
                 }
 
@@ -371,11 +371,11 @@ public class ClickActionTask extends UniversalRunnable {
                 }
 
             case GIVE_PERM:
-                if (plugin.getVault() == null || !plugin.getVault().hooked()) {
+                if (plugin.getVault() == null || !plugin.getVault().hasPermission()) {
                     plugin.debug(
                             DebugLevel.HIGHEST,
                             Level.WARNING,
-                            "Vault not hooked! Cannot give permission: " + executable + "!");
+                            "Vault permission not hooked! Cannot give permission: " + executable + "!");
                     break;
                 }
 
@@ -383,11 +383,11 @@ public class ClickActionTask extends UniversalRunnable {
                 break;
 
             case TAKE_PERM:
-                if (plugin.getVault() == null || !plugin.getVault().hooked()) {
+                if (plugin.getVault() == null || !plugin.getVault().hasPermission()) {
                     plugin.debug(
                             DebugLevel.HIGHEST,
                             Level.WARNING,
-                            "Vault not hooked! Cannot take permission: " + executable + "!");
+                            "Vault permission not hooked! Cannot take permission: " + executable + "!");
                     break;
                 }
 
