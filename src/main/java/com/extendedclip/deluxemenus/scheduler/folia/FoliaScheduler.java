@@ -118,7 +118,7 @@ public class FoliaScheduler implements TaskScheduler {
     public MyScheduledTask runTaskLater(Location location, Runnable runnable, long delay) {
         //Folia exception: Delay ticks may not be <= 0
         if (delay <= 0) {
-            return runTask(runnable);
+            return runTask(location, runnable);
         }
         return new FoliaScheduledTask(regionScheduler.runDelayed(plugin, location, task -> runnable.run(), delay));
     }
