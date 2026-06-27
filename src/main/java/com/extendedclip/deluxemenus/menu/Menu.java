@@ -197,33 +197,37 @@ public class Menu {
     }
 
     public static void closeMenu(final @NotNull DeluxeMenus plugin, final @NotNull Player player, final boolean close, final boolean executeCloseActions) {
-        if (!plugin.getScheduler().isEntityThread(player)) {
-            plugin.getScheduler().runTask(player, () -> closeMenu(plugin, player, close, executeCloseActions));
-            return;
-        }
-
         Optional<MenuHolder> optionalHolder = getMenuHolder(player);
         if (optionalHolder.isEmpty()) {
             return;
         }
 
         MenuHolder holder = optionalHolder.get();
+        Optional<Menu> menu = holder.getMenu();
 
+        if (!plugin.getScheduler().isEntityThread(player)) {
+            plugin.getScheduler().runTask(player, () -> closeMenu(plugin, player, holder, menu, close, executeCloseActions));
+            return;
+        }
+
+        closeMenu(plugin, player, holder, menu, close, executeCloseActions);
+    }
+
+    private static void closeMenu(final @NotNull DeluxeMenus plugin, final @NotNull Player player, final @NotNull MenuHolder holder,
+                                  final @NotNull Optional<Menu> menu, final boolean close, final boolean executeCloseActions) {
         holder.stopPlaceholderUpdate();
         holder.stopRefreshTask();
 
         if (executeCloseActions) {
-            holder.getMenu().map(Menu::options).map(MenuOptions::closeHandler).flatMap(h -> h).ifPresent(h -> h.onClick(holder));
+            menu.map(Menu::options).map(MenuOptions::closeHandler).flatMap(h -> h).ifPresent(h -> h.onClick(holder));
         }
 
         if (close) {
-            plugin.getScheduler().runTask(player, () -> {
-                player.closeInventory();
-                cleanInventory(plugin, player);
-            });
+            player.closeInventory();
+            cleanInventory(plugin, player);
         }
         menuHolders.remove(holder);
-        lastOpenedMenus.put(player.getUniqueId(), holder.getMenu().orElse(null));
+        menu.ifPresent(value -> lastOpenedMenus.put(player.getUniqueId(), value));
     }
 
     public static void closeMenuForShutdown(final @NotNull DeluxeMenus plugin, final @NotNull Player player) {
