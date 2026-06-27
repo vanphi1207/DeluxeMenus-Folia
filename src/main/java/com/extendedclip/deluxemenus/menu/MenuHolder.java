@@ -137,7 +137,7 @@ public class MenuHolder implements InventoryHolder {
 
         setUpdating(true);
 
-        scheduler.runTaskAsynchronously(() -> {
+        scheduler.runTask(viewer, () -> {
 
             final Set<MenuItem> active = new HashSet<>();
             final Set<Integer> slotsToClear = new HashSet<>();
@@ -177,47 +177,44 @@ public class MenuHolder implements InventoryHolder {
                 return;
             }
 
-            scheduler.runTask(viewer, () -> {
+            for (int slot : slotsToClear) {
+                getInventory().setItem(slot, null);
+            }
 
-                for (int slot : slotsToClear) {
-                    getInventory().setItem(slot, null);
+            boolean update = false;
+
+            for (MenuItem item : active) {
+
+                ItemStack iStack = item.getItemStack(this);
+
+                if (iStack == null) {
+                    continue;
                 }
 
-                boolean update = false;
+                iStack = plugin.getMenuItemMarker().mark(iStack);
 
-                for (MenuItem item : active) {
+                int slot = item.options().slot();
 
-                    ItemStack iStack = item.getItemStack(this);
-
-                    if (iStack == null) {
-                        continue;
-                    }
-
-                    iStack = plugin.getMenuItemMarker().mark(iStack);
-
-                    int slot = item.options().slot();
-
-                    if (slot >= menu.options().size()) {
-                        continue;
-                    }
-
-                    if (item.options().updatePlaceholders()) {
-                        update = true;
-                    }
-
-                    getInventory().setItem(item.options().slot(), iStack);
+                if (slot >= menu.options().size()) {
+                    continue;
                 }
 
-                setActiveItems(active);
-
-                if (update && updateTask == null) {
-                    startUpdatePlaceholdersTask();
-                } else if (!update && updateTask != null) {
-                    stopPlaceholderUpdate();
+                if (item.options().updatePlaceholders()) {
+                    update = true;
                 }
 
-                setUpdating(false);
-            });
+                getInventory().setItem(item.options().slot(), iStack);
+            }
+
+            setActiveItems(active);
+
+            if (update && updateTask == null) {
+                startUpdatePlaceholdersTask();
+            } else if (!update && updateTask != null) {
+                stopPlaceholderUpdate();
+            }
+
+            setUpdating(false);
         });
     }
 

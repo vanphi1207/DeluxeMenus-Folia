@@ -177,6 +177,11 @@ public class Menu {
     }
 
     public static void cleanInventory(final @NotNull DeluxeMenus plugin, final @NotNull Player player) {
+        if (!plugin.getScheduler().isEntityThread(player)) {
+            plugin.getScheduler().runTask(player, () -> cleanInventory(plugin, player));
+            return;
+        }
+
         for (final ItemStack itemStack : player.getInventory().getContents()) {
             if (itemStack == null) continue;
             if (!plugin.getMenuItemMarker().isMarked(itemStack)) continue;
@@ -192,6 +197,11 @@ public class Menu {
     }
 
     public static void closeMenu(final @NotNull DeluxeMenus plugin, final @NotNull Player player, final boolean close, final boolean executeCloseActions) {
+        if (!plugin.getScheduler().isEntityThread(player)) {
+            plugin.getScheduler().runTask(player, () -> closeMenu(plugin, player, close, executeCloseActions));
+            return;
+        }
+
         Optional<MenuHolder> optionalHolder = getMenuHolder(player);
         if (optionalHolder.isEmpty()) {
             return;
@@ -217,6 +227,11 @@ public class Menu {
     }
 
     public static void closeMenuForShutdown(final @NotNull DeluxeMenus plugin, final @NotNull Player player) {
+        if (!plugin.getScheduler().isEntityThread(player)) {
+            plugin.getScheduler().runTask(player, () -> closeMenuForShutdown(plugin, player));
+            return;
+        }
+
         getMenuHolder(player).ifPresent(MenuHolder::stopPlaceholderUpdate);
 
         player.closeInventory();
@@ -277,6 +292,11 @@ public class Menu {
     }
 
     public void openMenu(final @NotNull Player viewer, final @Nullable Map<String, String> args, final @Nullable Player placeholderPlayer) {
+        if (!scheduler.isEntityThread(viewer)) {
+            scheduler.runTask(viewer, () -> openMenu(viewer, args, placeholderPlayer));
+            return;
+        }
+
         if (items == null || items.isEmpty()) {
             return;
         }
@@ -304,7 +324,7 @@ public class Menu {
             return;
         }
 
-        scheduler.runTaskAsynchronously(() -> {
+        scheduler.runTask(viewer, () -> {
 
             Set<MenuItem> activeItems = new HashSet<>();
 
@@ -393,27 +413,23 @@ public class Menu {
 
             final boolean updatePlaceholders = update;
 
-            scheduler.runTask(viewer, () -> {
-                if (options.refresh()) {
-                    holder.startRefreshTask();
-                }
+            if (options.refresh()) {
+                holder.startRefreshTask();
+            }
 
-                if (isInMenu(holder.getViewer())) {
-                    closeMenu(plugin, holder.getViewer(), false);
-                }
+            if (isInMenu(holder.getViewer())) {
+                closeMenu(plugin, holder.getViewer(), false);
+            }
 
-                viewer.openInventory(inventory);
-                menuHolders.add(holder);
+            viewer.openInventory(inventory);
+            menuHolders.add(holder);
 
-                if (updatePlaceholders) {
-                    holder.startUpdatePlaceholdersTask();
-                }
-            });
+            if (updatePlaceholders) {
+                holder.startUpdatePlaceholdersTask();
+            }
 
-            scheduler.runTask(viewer, () -> {
-                DeluxeMenusOpenMenuEvent openEvent = new DeluxeMenusOpenMenuEvent(viewer, holder);
-                Bukkit.getPluginManager().callEvent(openEvent);
-            });
+            DeluxeMenusOpenMenuEvent openEvent = new DeluxeMenusOpenMenuEvent(viewer, holder);
+            Bukkit.getPluginManager().callEvent(openEvent);
         });
     }
 
