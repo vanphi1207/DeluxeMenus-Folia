@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MenuHolder implements InventoryHolder {
 
@@ -29,7 +30,7 @@ public class MenuHolder implements InventoryHolder {
     private MyScheduledTask updateTask = null;
     private MyScheduledTask refreshTask = null;
     private Inventory inventory;
-    private boolean updating;
+    private final AtomicBoolean updating = new AtomicBoolean();
     private boolean parsePlaceholdersInArguments;
     private boolean parsePlaceholdersAfterArguments;
     private Map<String, String> typedArgs;
@@ -135,49 +136,49 @@ public class MenuHolder implements InventoryHolder {
             return;
         }
 
-        setUpdating(true);
+        if (!updating.compareAndSet(false, true)) {
+            return;
+        }
 
-        scheduler.runTaskAsynchronously(() -> {
+        scheduler.runTask(viewer, () -> {
+            try {
+                final Set<MenuItem> active = new HashSet<>();
+                final Set<Integer> slotsToClear = new HashSet<>();
 
-            final Set<MenuItem> active = new HashSet<>();
-            final Set<Integer> slotsToClear = new HashSet<>();
+                for (int i = 0; i < getInventory().getSize(); i++) {
+                    TreeMap<Integer, MenuItem> e = menu.getMenuItems().get(i);
 
-            for (int i = 0; i < getInventory().getSize(); i++) {
-                TreeMap<Integer, MenuItem> e = menu.getMenuItems().get(i);
+                    if (e == null) {
+                        slotsToClear.add(i);
+                        continue;
+                    }
 
-                if (e == null) {
-                    slotsToClear.add(i);
-                    continue;
-                }
+                    boolean matched = false;
+                    for (MenuItem item : e.values()) {
 
-                boolean matched = false;
-                for (MenuItem item : e.values()) {
+                        if (item.options().viewRequirements().isPresent()) {
 
-                    if (item.options().viewRequirements().isPresent()) {
-
-                        if (item.options().viewRequirements().get().evaluate(this)) {
+                            if (item.options().viewRequirements().get().evaluate(this)) {
+                                matched = true;
+                                active.add(item);
+                                break;
+                            }
+                        } else {
                             matched = true;
                             active.add(item);
                             break;
                         }
-                    } else {
-                        matched = true;
-                        active.add(item);
-                        break;
+                    }
+
+                    if (!matched) {
+                        slotsToClear.add(i);
                     }
                 }
 
-                if (!matched) {
-                    slotsToClear.add(i);
+                if (active.isEmpty()) {
+                    Menu.closeMenu(plugin, viewer, true);
+                    return;
                 }
-            }
-
-            if (active.isEmpty()) {
-                scheduler.runTask(viewer, () -> Menu.closeMenu(plugin, viewer, true));
-                return;
-            }
-
-            scheduler.runTask(viewer, () -> {
 
                 for (int slot : slotsToClear) {
                     getInventory().setItem(slot, null);
@@ -215,9 +216,9 @@ public class MenuHolder implements InventoryHolder {
                 } else if (!update && updateTask != null) {
                     stopPlaceholderUpdate();
                 }
-
+            } finally {
                 setUpdating(false);
-            });
+            }
         });
     }
 
@@ -275,7 +276,7 @@ public class MenuHolder implements InventoryHolder {
                 viewer,
                 () -> {
 
-                    if (updating) {
+                    if (isUpdating()) {
                         return;
                     }
 
@@ -332,11 +333,11 @@ public class MenuHolder implements InventoryHolder {
     }
 
     public boolean isUpdating() {
-        return updating;
+        return updating.get();
     }
 
     public void setUpdating(boolean updating) {
-        this.updating = updating;
+        this.updating.set(updating);
     }
 
     @Override
