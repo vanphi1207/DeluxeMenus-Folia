@@ -64,6 +64,11 @@ public class ClickActionTask extends UniversalRunnable {
             return;
         }
 
+        if (!scheduler.isEntityThread(player)) {
+            scheduler.runTask(player, this);
+            return;
+        }
+
         final Optional<MenuHolder> holder = Menu.getMenuHolder(player);
         final Player target = holder.isPresent() && holder.get().getPlaceholderPlayer() != null
                 ? holder.get().getPlaceholderPlayer()
@@ -463,21 +468,25 @@ public class ClickActionTask extends UniversalRunnable {
                     }
                 }
 
+                final String finalSoundName = soundName;
+                final float finalVolume = volume;
+                final float finalPitch = pitch;
+
                 switch (actionType) {
                     case BROADCAST_WORLD_RAW_SOUND:
                         for (final Player broadcastTarget : player.getWorld().getPlayers()) {
-                            broadcastTarget.playSound(broadcastTarget.getLocation(), soundName, volume, pitch);
+                            scheduler.runTask(broadcastTarget, () -> broadcastTarget.playSound(broadcastTarget.getLocation(), finalSoundName, finalVolume, finalPitch));
                         }
                         break;
 
                     case BROADCAST_RAW_SOUND:
                         for (final Player broadcastTarget : Bukkit.getOnlinePlayers()) {
-                            broadcastTarget.playSound(broadcastTarget.getLocation(), soundName, volume, pitch);
+                            scheduler.runTask(broadcastTarget, () -> broadcastTarget.playSound(broadcastTarget.getLocation(), finalSoundName, finalVolume, finalPitch));
                         }
                         break;
 
                     case PLAY_RAW_SOUND:
-                        player.playSound(player.getLocation(), soundName, volume, pitch);
+                        scheduler.runTask(player, () -> player.playSound(player.getLocation(), finalSoundName, finalVolume, finalPitch));
                         break;
 
                     case BROADCAST_SOUND:
@@ -490,7 +499,8 @@ public class ClickActionTask extends UniversalRunnable {
                             break;
                         }
                         for (final Player broadcastTarget : Bukkit.getOnlinePlayers()) {
-                            broadcastTarget.playSound(broadcastTarget.getLocation(), sound, volume, pitch);
+                            final Sound finalSound = sound;
+                            scheduler.runTask(broadcastTarget, () -> broadcastTarget.playSound(broadcastTarget.getLocation(), finalSound, finalVolume, finalPitch));
                         }
                         break;
 
@@ -504,7 +514,8 @@ public class ClickActionTask extends UniversalRunnable {
                             break;
                         }
                         for (final Player broadcastTarget : player.getWorld().getPlayers()) {
-                            broadcastTarget.playSound(broadcastTarget.getLocation(), sound, volume, pitch);
+                            final Sound finalSound = sound;
+                            scheduler.runTask(broadcastTarget, () -> broadcastTarget.playSound(broadcastTarget.getLocation(), finalSound, finalVolume, finalPitch));
                         }
                         break;
 
@@ -517,7 +528,8 @@ public class ClickActionTask extends UniversalRunnable {
                                 );
                                 break;
                             }
-                            player.playSound(player.getLocation(), sound, volume, pitch);
+                            final Sound finalSound = sound;
+                            scheduler.runTask(player, () -> player.playSound(player.getLocation(), finalSound, finalVolume, finalPitch));
                             break;
                 }
                 break;
